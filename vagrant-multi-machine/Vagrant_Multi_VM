@@ -1,0 +1,21 @@
+#Multiple VM
+
+Vagrant.configure("2") do |config|
+  config.vm.define :Ubuntu16 do |ubuntu|
+    ubuntu.vm.box = "ubuntu/xenial64"
+    ubuntu.vm.host_name = 'Ubuntu-16'
+    ubuntu.vm.network "private_network", ip: "192.168.50.50"
+  end
+
+  config.vm.define :Centos7-1 do |centos|
+    centos.vm.box = "centos/7"
+    centos.vm.host_name = 'Centos7'
+    centos.vm.network "private_network", ip: "192.168.50.51"
+  end
+  
+  config.vm.define :Centos7-2 do |centos|
+    centos.vm.box = "centos/7"
+    centos.vm.host_name = 'Centos7-2'
+    centos.vm.network "private_network", ip: "192.168.50.52"
+  end
+end
