@@ -1,0 +1,72 @@
+Example 1:
+
+---
+- hosts: apache
+  sudo: yes
+  vars:
+    http_port: 80
+    domain: example.com
+  tasks:
+    - name: install apache2
+      apt: name=apache2 update_cache=yes state=latest
+
+    - name: enabled mod_rewrite
+      apache2_module: name=rewrite state=present
+      notify:
+        - restart apache2
+
+    - name: apache2 listen on port {{ http_port }}
+      lineinfile: dest=/etc/apache2/ports.conf regexp="^Listen " line="Listen {{ http_port }}" state=present
+      notify:
+        - restart apache2
+
+    - name: apache2 virtualhost on port {{ http_port }}
+      lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^<VirtualHost \*:" line="<VirtualHost *:{{ http_port }}>"
+      notify:
+        - restart apache2
+
+    - name: create virtual host file
+      template: src=virtualhost.conf dest=/etc/apache2/sites-available/{{ domain }}.conf
+
+    - name: a2ensite {{ domain }}
+      command: a2ensite {{ domain }}
+      args:
+        creates: /etc/apache2/sites-enabled/{{ domain }}.conf
+      notify:
+        - restart apache2
+
+  handlers:
+    - name: restart apache2
+      service: name=apache2 state=restarted
+	  
+===========================================================================================================================================================
+
+Example 2:
+
+---
+- hosts: droplets
+  tasks:
+    - name: Installs nginx web server
+      apt: pkg=nginx state=installed update_cache=true
+      notify:
+        - start nginx
+
+    - name: Upload default index.php for host
+      copy: src=static_files/index.php dest=/usr/share/nginx/www/ mode=0644
+      register: php
+      ignore_errors: True
+
+    - name: Remove index.html for host
+      command: rm /usr/share/nginx/www/index.html
+      when: php|success
+
+    - name: Upload default index.html for host
+      copy: src=static_files/index.html dest=/usr/share/nginx/www/ mode=0644
+      when: php|failed
+
+  handlers:
+    - name: start nginx
+      service: name=nginx state=started
+
+============================================================================================================================================================
+
